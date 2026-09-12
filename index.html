@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Triangle Area</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 30px;
+      background-color: #f8fafc;
+      color: #0f172a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .canvas-card {
+      background: #ffffff;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      padding: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    svg {
+      display: block;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .sidebar {
+      width: 260px;
+      background: #ffffff;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .stat-box {
+      background: #eff6ff;
+      border: 1px solid #dbeafe;
+      border-radius: 6px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #3b82f6;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #1d4ed8;
+      margin-top: 2px;
+    }
+
+    .details {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+    }
+
+    .row .label { color: #64748b; }
+    .row .val { font-weight: 600; color: #0f172a; }
+
+    .divider {
+      height: 1px;
+      background: #e2e8f0;
+      margin: 4px 0;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: #475569;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .btn {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #0f172a;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+      border-color: #1d4ed8;
+    }
+
+    /* SVG Elements */
+    .triangle {
+      fill: rgba(37, 99, 235, 0.12);
+      stroke: #94a3b8;
+      stroke-width: 2;
+    }
+
+    .base-line {
+      stroke: #1d4ed8;
+      stroke-width: 3.5;
+      stroke-linecap: round;
+    }
+
+    .height-line {
+      stroke: #ef4444;
+      stroke-width: 2;
+      stroke-dasharray: 4,4;
+    }
+
+    .ext-line {
+      stroke: #cbd5e1;
+      stroke-dasharray: 3,3;
+      stroke-width: 1.5;
+    }
+
+    .right-angle {
+      fill: none;
+      stroke: #ef4444;
+      stroke-width: 1.5;
+    }
+
+    .vertex-handle {
+      fill: #ffffff;
+      stroke: #2563eb;
+      stroke-width: 3;
+      cursor: grab;
+      transition: stroke 0.2s ease, fill 0.2s ease;
+    }
+
+    .vertex-handle.top {
+      stroke: #ef4444;
+      fill: #fef2f2;
+    }
+
+    .vertex-handle:active {
+      cursor: grabbing;
+      r: 9;
+    }
+
+    .label-text {
+      font-size: 11px;
+      font-weight: 600;
+      pointer-events: none;
+    }
+
+    .vertex-tag {
+      font-size: 11px;
+      font-weight: 700;
+      fill: #334155;
+      pointer-events: none;
+      transition: fill 0.2s ease;
+    }
+
+    .vertex-tag.top {
+      fill: #ef4444;
+    }
+
+    .scale-text {
+      font-size: 10px;
+      font-weight: 600;
+      fill: #2563eb;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Grid Canvas -->
+    <div class="canvas-card">
+      <svg id="svgCanvas" width="560" height="480">
+        <defs>
+          <!-- 1cm Grid Pattern (40px = 1cm) -->
+          <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#f1f5f9" stroke-width="1"/>
+          </pattern>
+        </defs>
+
+        <!-- Grid Background -->
+        <rect width="100%" height="100%" fill="url(#gridPattern)" />
+
+        <!-- 1cm x 1cm Scale Indicator Corner Square -->
+        <g id="scaleSquare">
+          <rect x="40" y="40" width="40" height="40" fill="rgba(37, 99, 235, 0.08)" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="3,3" />
+          <text x="60" y="34" text-anchor="middle" class="scale-text">1 cm</text>
+          <text x="34" y="64" text-anchor="end" dominant-baseline="middle" class="scale-text">1 cm</text>
+        </g>
+
+        <!-- Dynamic Height & Extension Lines -->
+        <line id="heightBaseExt" class="ext-line" />
+        <polyline id="rightAngle" class="right-angle" />
+        <line id="heightLine" class="height-line" />
+
+        <!-- Triangle Body -->
+        <polygon id="trianglePoly" class="triangle" />
+        
+        <!-- Highlighted Active Base Segment -->
+        <line id="baseLine" class="base-line" />
+
+        <!-- Canvas Text Labels -->
+        <text id="baseText" class="label-text" fill="#1d4ed8" text-anchor="middle">b</text>
+        <text id="heightText" class="label-text" fill="#ef4444" text-anchor="start">h</text>
+
+        <!-- Vertex Labels -->
+        <text id="labelA" class="vertex-tag">A</text>
+        <text id="labelB" class="vertex-tag">B</text>
+        <text id="labelC" class="vertex-tag">C</text>
+
+        <!-- Draggable Handles for All Vertices -->
+        <circle id="vertexA" class="vertex-handle" r="7" />
+        <circle id="vertexB" class="vertex-handle" r="7" />
+        <circle id="vertexC" class="vertex-handle" r="7" />
+      </svg>
+    </div>
+
+    <!-- Sidebar Stats Panel -->
+    <div class="sidebar">
+      <div class="stat-box">
+        <div class="stat-label">Area</div>
+        <div class="stat-value" id="dispArea">12.00 cm²</div>
+      </div>
+
+      <div class="details">
+        <div class="row">
+          <span class="label">Base (<span id="dispBaseLabel">AB</span>)</span>
+          <span class="val" id="dispBase">6.00 cm</span>
+        </div>
+        <div class="row">
+          <span class="label">Height (h)</span>
+          <span class="val" id="dispHeight">4.00 cm</span>
+        </div>
+        <div class="row">
+          <span class="label">Formula</span>
+          <span class="val" id="dispCalc">½ × 6 × 4</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="btn-group">
+        <button class="btn btn-primary" id="switchBaseBtn">
+          <span>Switch Base</span>
+          <span id="btnBaseTag">Side AB</span>
+        </button>
+
+        <button class="btn" id="resetBtn">Reset Triangle</button>
+      </div>
+
+      <label class="checkbox-label">
+        <input type="checkbox" id="snapToggle" checked> Snap to 0.5 cm
+      </label>
+    </div>
+  </div>
+
+  <script>
+    const CM_TO_PX = 40;
+    
+    // SVG Elements
+    const svg = document.getElementById('svgCanvas');
+    const vertexA = document.getElementById('vertexA');
+    const vertexB = document.getElementById('vertexB');
+    const vertexC = document.getElementById('vertexC');
+    
+    const labelA = document.getElementById('labelA');
+    const labelB = document.getElementById('labelB');
+    const labelC = document.getElementById('labelC');
+
+    const trianglePoly = document.getElementById('trianglePoly');
+    const baseLine = document.getElementById('baseLine');
+    const heightLine = document.getElementById('heightLine');
+    const heightBaseExt = document.getElementById('heightBaseExt');
+    const rightAngle = document.getElementById('rightAngle');
+    
+    const baseText = document.getElementById('baseText');
+    const heightText = document.getElementById('heightText');
+
+    // Sidebar Elements
+    const dispBaseLabel = document.getElementById('dispBaseLabel');
+    const dispBase = document.getElementById('dispBase');
+    const dispHeight = document.getElementById('dispHeight');
+    const dispCalc = document.getElementById('dispCalc');
+    const dispArea = document.getElementById('dispArea');
+    
+    const snapToggle = document.getElementById('snapToggle');
+    const resetBtn = document.getElementById('resetBtn');
+    const switchBaseBtn = document.getElementById('switchBaseBtn');
+    const btnBaseTag = document.getElementById('btnBaseTag');
+
+    // Base modes configuration
+    const BASE_MODES = [
+      { key: 'AB', p1: 'A', p2: 'B', opp: 'C' },
+      { key: 'BC', p1: 'B', p2: 'C', opp: 'A' },
+      { key: 'CA', p1: 'C', p2: 'A', opp: 'B' }
+    ];
+    let currentBaseIdx = 0;
+
+    // Default Initial positions (in cm)
+    const initialPos = {
+      A: { x: 3, y: 9 },
+      B: { x: 9, y: 9 },
+      C: { x: 6, y: 5 }
+    };
+
+    let pos = JSON.parse(JSON.stringify(initialPos));
+    let activeDrag = null;
+
+    function update() {
+      const mode = BASE_MODES[currentBaseIdx];
+      
+      // Update Handle highlights
+      [vertexA, vertexB, vertexC].forEach(el => el.classList.remove('top'));
+      [labelA, labelB, labelC].forEach(el => el.classList.remove('top'));
+      
+      const oppHandle = mode.opp === 'A' ? vertexA : mode.opp === 'B' ? vertexB : vertexC;
+      const oppLabel = mode.opp === 'A' ? labelA : mode.opp === 'B' ? labelB : labelC;
+      oppHandle.classList.add('top');
+      oppLabel.classList.add('top');
+
+      // Pixel coordinates for A, B, C
+      const ax = pos.A.x * CM_TO_PX, ay = pos.A.y * CM_TO_PX;
+      const bx = pos.B.x * CM_TO_PX, by = pos.B.y * CM_TO_PX;
+      const cx = pos.C.x * CM_TO_PX, cy = pos.C.y * CM_TO_PX;
+
+      // Handle positions
+      vertexA.setAttribute('cx', ax); vertexA.setAttribute('cy', ay);
+      vertexB.setAttribute('cx', bx); vertexB.setAttribute('cy', by);
+      vertexC.setAttribute('cx', cx); vertexC.setAttribute('cy', cy);
+
+      // Vertex Text Tags
+      labelA.setAttribute('x', ax - 12); labelA.setAttribute('y', ay + 14);
+      labelB.setAttribute('x', bx + 6);  labelB.setAttribute('y', by + 14);
+      labelC.setAttribute('x', cx - 4);  labelC.setAttribute('y', cy - 12);
+
+      // Polygon points
+      trianglePoly.setAttribute('points', `${ax},${ay} ${bx},${by} ${cx},${cy}`);
+
+      // Base endpoints & Opposite vertex
+      const p1 = { x: pos[mode.p1].x * CM_TO_PX, y: pos[mode.p1].y * CM_TO_PX };
+      const p2 = { x: pos[mode.p2].x * CM_TO_PX, y: pos[mode.p2].y * CM_TO_PX };
+      const opp = { x: pos[mode.opp].x * CM_TO_PX, y: pos[mode.opp].y * CM_TO_PX };
+
+      // Update Base Highlight Segment
+      baseLine.setAttribute('x1', p1.x); baseLine.setAttribute('y1', p1.y);
+      baseLine.setAttribute('x2', p2.x); baseLine.setAttribute('y2', p2.y);
+
+      // Base line vector math
+      const baseVectorX = p2.x - p1.x;
+      const baseVectorY = p2.y - p1.y;
+      const baseLenPx = Math.hypot(baseVectorX, baseVectorY);
+      const baseCm = baseLenPx / CM_TO_PX;
+
+      // Calculate Projection (Foot of Perpendicular Height Line)
+      let footX = p1.x, footY = p1.y, t = 0;
+      if (baseLenPx > 0.001) {
+        const oppVectorX = opp.x - p1.x;
+        const oppVectorY = opp.y - p1.y;
+        t = (oppVectorX * baseVectorX + oppVectorY * baseVectorY) / (baseLenPx * baseLenPx);
+        footX = p1.x + t * baseVectorX;
+        footY = p1.y + t * baseVectorY;
+      }
+
+      const heightLenPx = Math.hypot(opp.x - footX, opp.y - footY);
+      const heightCm = heightLenPx / CM_TO_PX;
+      const areaCm2 = 0.5 * baseCm * heightCm;
+
+      // Draw Perpendicular Height Line
+      heightLine.setAttribute('x1', opp.x); heightLine.setAttribute('y1', opp.y);
+      heightLine.setAttribute('x2', footX); heightLine.setAttribute('y2', footY);
+
+      // Base extension line if perpendicular foot falls outside base segment
+      if (t < 0) {
+        heightBaseExt.setAttribute('x1', footX); heightBaseExt.setAttribute('y1', footY);
+        heightBaseExt.setAttribute('x2', p1.x); heightBaseExt.setAttribute('y2', p1.y);
+        heightBaseExt.style.display = 'block';
+      } else if (t > 1) {
+        heightBaseExt.setAttribute('x1', p2.x); heightBaseExt.setAttribute('y1', p2.y);
+        heightBaseExt.setAttribute('x2', footX); heightBaseExt.setAttribute('y2', footY);
+        heightBaseExt.style.display = 'block';
+      } else {
+        heightBaseExt.style.display = 'none';
+      }
+
+      // Right Angle Indicator
+      if (heightLenPx > 15 && baseLenPx > 15) {
+        const ux = baseVectorX / baseLenPx;
+        const uy = baseVectorY / baseLenPx;
+        const vx = (opp.x - footX) / heightLenPx;
+        const vy = (opp.y - footY) / heightLenPx;
+        const s = 8;
+        
+        const r1x = footX + s * ux, r1y = footY + s * uy;
+        const r2x = footX + s * ux + s * vx, r2y = footY + s * uy + s * vy;
+        const r3x = footX + s * vx, r3y = footY + s * vy;
+
+        rightAngle.setAttribute('points', `${r1x},${r1y} ${r2x},${r2y} ${r3x},${r3y}`);
+        rightAngle.style.display = 'block';
+      } else {
+        rightAngle.style.display = 'none';
+      }
+
+      // On-canvas dynamic labels
+      baseText.setAttribute('x', (p1.x + p2.x) / 2);
+      baseText.setAttribute('y', (p1.y + p2.y) / 2 + 16);
+      baseText.textContent = `b = ${baseCm.toFixed(1)} cm`;
+
+      heightText.setAttribute('x', (opp.x + footX) / 2 + 6);
+      heightText.setAttribute('y', (opp.y + footY) / 2);
+      heightText.textContent = `h = ${heightCm.toFixed(1)} cm`;
+
+      // Sidebar updates
+      dispBaseLabel.textContent = mode.key;
+      dispBase.textContent = `${baseCm.toFixed(1)} cm`;
+      dispHeight.textContent = `${heightCm.toFixed(1)} cm`;
+      dispCalc.textContent = `½ × ${baseCm.toFixed(1)} × ${heightCm.toFixed(1)}`;
+      dispArea.textContent = `${areaCm2.toFixed(2)} cm²`;
+      btnBaseTag.textContent = `Side ${mode.key}`;
+    }
+
+    function getEventPos(evt) {
+      const rect = svg.getBoundingClientRect();
+      const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+      const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+
+      let x = (clientX - rect.left) / CM_TO_PX;
+      let y = (clientY - rect.top) / CM_TO_PX;
+
+      if (snapToggle.checked) {
+        x = Math.round(x * 2) / 2;
+        y = Math.round(y * 2) / 2;
+      }
+
+      x = Math.max(0.5, Math.min(13.5, x));
+      y = Math.max(0.5, Math.min(11.5, y));
+
+      return { x, y };
+    }
+
+    function attachDrag(element, key) {
+      const start = (e) => {
+        e.preventDefault();
+        activeDrag = key;
+      };
+      element.addEventListener('mousedown', start);
+      element.addEventListener('touchstart', start, { passive: false });
+    }
+
+    attachDrag(vertexA, 'A');
+    attachDrag(vertexB, 'B');
+    attachDrag(vertexC, 'C');
+
+    function doDrag(e) {
+      if (!activeDrag) return;
+      e.preventDefault();
+      pos[activeDrag] = getEventPos(e);
+      update();
+    }
+
+    function stopDrag() {
+      activeDrag = null;
+    }
+
+    window.addEventListener('mousemove', doDrag);
+    window.addEventListener('touchmove', doDrag, { passive: false });
+    window.addEventListener('mouseup', stopDrag);
+    window.addEventListener('touchend', stopDrag);
+
+    // Switch Base Button Click Listener
+    switchBaseBtn.addEventListener('click', () => {
+      currentBaseIdx = (currentBaseIdx + 1) % BASE_MODES.length;
+      update();
+    });
+
+    // Reset Button Listener
+    resetBtn.addEventListener('click', () => {
+      pos = JSON.parse(JSON.stringify(initialPos));
+      currentBaseIdx = 0;
+      update();
+    });
+
+    update();
+  </script>
+</body>
+</html>
